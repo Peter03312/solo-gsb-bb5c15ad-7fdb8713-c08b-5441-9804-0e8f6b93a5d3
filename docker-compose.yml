@@ -1,0 +1,28 @@
+services:
+  stowage:
+    build: .
+    image: stowage-service:latest
+    container_name: stowage-service
+    ports:
+      - "8000:8000"
+    environment:
+      # SQLite 数据库文件（挂载到卷持久化）
+      DATABASE_URL: "sqlite:////app/data/stowage.db"
+      # 首次启动且库为空时自动写入一套示例资料；正式使用置 0
+      SEED_SAMPLE: "1"
+      # 求解器回溯节点预算
+      SOLVER_NODE_BUDGET: "2000000"
+      HOST: "0.0.0.0"
+      PORT: "8000"
+    volumes:
+      - stowage-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health').status==200 else 1)"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+volumes:
+  stowage-data:
